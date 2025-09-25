@@ -121,7 +121,7 @@ docker build -t craigybabyj-fileserver .                  # Build image
 - **Container Security**: Non-root user, minimal attack surface
 - **Input Validation**: File type and size restrictions
 
-## 📝 License
+## 📝 License 
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
