@@ -123,7 +123,9 @@ docker build -t craigybabyj-fileserver .                  # Build image
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+**Note**: This license restricts commercial use. The software is free for personal, educational, and non-commercial purposes. Any derivative works must also be licensed under GPL v3.
 
 ## 🤝 Contributing
 
