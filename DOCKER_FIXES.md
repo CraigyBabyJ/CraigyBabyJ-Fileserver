@@ -17,21 +17,41 @@ FATAL failed to parse the image name: ghcr.io/CraigyBabyJ/craigybabyj-fileserver
 1. **IMAGE_NAME variable**: Set to `${{ github.repository_owner }}/craigybabyj-fileserver` (works for build/push)
 2. **Trivy scan**: Hardcoded to `ghcr.io/craigybabyj/craigybabyj-fileserver:latest` (prevents parsing errors)
 
+## Issue: Deprecated CodeQL Action v2
+
+### Problem
+GitHub Actions workflow was failing with:
+```
+Error: CodeQL Action major versions v1 and v2 have been deprecated
+Warning: Resource not accessible by integration
+```
+
+### Root Cause
+- CodeQL Action v2 was retired on January 10, 2025
+- Missing `security-events: write` permission for SARIF uploads
+- GitHub requires v3 for all new security scanning features
+
+### Solution Applied
+1. **Updated CodeQL Action**: Changed from `@v2` to `@v3`
+2. **Added Permissions**: Added `security-events: write` to job permissions
+3. **Maintained Compatibility**: Ensured SARIF upload functionality works with v3
+
 ### Files Modified
-- `.github/workflows/docker.yml` - Added comments and hardcoded image reference for Trivy scan
+- `.github/workflows/docker.yml` - Updated CodeQL action version and permissions
 
 ### Prevention
-- **Always use lowercase** for container image names
-- **Test with actual repository owner names** that may contain uppercase letters
-- **Document case sensitivity requirements** in CI/CD configurations
+- **Monitor GitHub deprecation notices** for action updates
+- **Include proper permissions** for security scanning workflows
+- **Test workflows regularly** to catch breaking changes early
 
 ### Verification
 The fix ensures:
 - ✅ Docker images build successfully
 - ✅ Images push to registry without errors  
 - ✅ Trivy security scans complete successfully
+- ✅ SARIF results upload to GitHub Security tab
 - ✅ Complete CI/CD pipeline runs end-to-end
 
 ---
 *Last updated: v1.0.1 release preparation*
-*Issue resolved: December 2024*
+*Issues resolved: December 2024*
