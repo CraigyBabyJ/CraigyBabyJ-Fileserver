@@ -284,6 +284,21 @@ messyuploadserver/
 └── uploads/           # Uploaded files (created automatically)
 ```
 
+## Changelog
+
+### v1.0.1 (Latest)
+- **🔧 Fixed:** Docker image name case sensitivity issue in GitHub Actions workflow
+- **📄 Updated:** License changed from MIT to GPL v3 to restrict commercial use
+- **🛡️ Enhanced:** Improved security scanning with proper container registry naming
+- **📦 Improved:** Docker image now builds successfully with lowercase naming convention
+
+### v1.0.0
+- **🚀 Initial Release:** Complete file upload server with authentication
+- **🐳 Docker:** Full containerization with Docker Compose support
+- **🔒 Security:** Rate limiting, file validation, and secure upload handling
+- **🌐 Web Interface:** Clean, responsive UI for file uploads and management
+- **⚙️ CI/CD:** Automated GitHub Actions for building and security scanning
+
 ## Support
 
 This is a simple file upload server designed for friends and small groups. For production use, consider additional security measures and proper web server deployment.
