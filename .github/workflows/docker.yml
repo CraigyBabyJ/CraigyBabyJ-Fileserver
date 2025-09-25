@@ -60,6 +60,10 @@ jobs:
       if: github.event_name != 'pull_request'
       uses: aquasecurity/trivy-action@master
       with:
+        # NOTE: Hardcoded lowercase to avoid case sensitivity issues
+        # github.repository_owner returns "CraigyBabyJ" but container registries require lowercase
+        # Using variables would result in: ghcr.io/CraigyBabyJ/craigybabyj-fileserver:latest (FAILS)
+        # Hardcoded ensures: ghcr.io/craigybabyj/craigybabyj-fileserver:latest (WORKS)
         image-ref: 'ghcr.io/craigybabyj/craigybabyj-fileserver:latest'
         format: 'sarif'
         output: 'trivy-results.sarif'
