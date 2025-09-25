@@ -1,4 +1,4 @@
-# Fly With Craig - Secure File Upload Server 🚀
+# CraigyBabyJ-Fileserver 🚀
 
 A production-ready Flask-based file upload server with user management, authentication, and Docker deployment support.
 
@@ -20,8 +20,8 @@ A production-ready Flask-based file upload server with user management, authenti
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/fly-with-craig.git
-   cd fly-with-craig
+   git clone https://github.com/craigybabyj/CraigyBabyJ-Fileserver.git
+   cd CraigyBabyJ-Fileserver
    ```
 
 2. **Set up environment**
@@ -67,7 +67,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for complete Ubuntu server deployment instruc
 ## 🏗️ Project Structure
 
 ```
-fly-with-craig/
+CraigyBabyJ-Fileserver/
 ├── app.py                 # Main Flask application
 ├── requirements.txt       # Python dependencies
 ├── .env                  # Environment variables
@@ -108,7 +108,7 @@ docker-compose logs -f app                        # View app logs
 docker-compose exec app bash                      # Access container
 
 # Build
-docker build -t fly-with-craig .                  # Build image
+docker build -t craigybabyj-fileserver .                  # Build image
 ```
 
 ## 🛡️ Security Features

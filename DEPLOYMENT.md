@@ -1,4 +1,4 @@
-# Fly With Craig - Deployment Guide
+# CraigyBabyJ-Fileserver - Deployment Guide
 
 ## Quick Start Checklist ✅
 
@@ -47,9 +47,9 @@ sudo chmod +x /usr/local/bin/docker-compose
 ### 2. Deploy Application
 ```bash
 # Create deployment directory
-sudo mkdir -p /opt/flywithcraig
-sudo chown $USER:$USER /opt/flywithcraig
-cd /opt/flywithcraig
+sudo mkdir -p /opt/craigybabyj-fileserver
+sudo chown $USER:$USER /opt/craigybabyj-fileserver
+cd /opt/craigybabyj-fileserver
 
 # Copy your application files here
 # Make sure .env file has PRODUCTION_MODE=true
