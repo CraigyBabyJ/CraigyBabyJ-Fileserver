@@ -1,0 +1,29 @@
+[Unit]
+Description=Fly With Craig Upload Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/flywithcraig
+Environment=PATH=/var/www/flywithcraig/venv/bin
+ExecStart=/var/www/flywithcraig/venv/bin/python app.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/flywithcraig/uploads /var/www/flywithcraig/data /var/www/flywithcraig/logs
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

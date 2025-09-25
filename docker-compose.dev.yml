@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: flywithcraig-dev
+    restart: unless-stopped
+    ports:
+      - "5000:5000"  # Expose port directly for development
+    environment:
+      - PRODUCTION_MODE=false  # Keep debug mode enabled
+      - FLASK_ENV=development
+    volumes:
+      # Mount source code for live reloading
+      - .:/app
+      # But exclude these directories to avoid conflicts
+      - /app/__pycache__
+      - /app/.git
+    networks:
+      - app-network
+    command: python app.py  # Direct command for development
+
+networks:
+  app-network:
+    driver: bridge
+
+# Note: No nginx in development - access app directly on localhost:5000
