@@ -446,6 +446,11 @@ def add_security_headers(response):
     )
     return response
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Docker"""
+    return jsonify({"status": "healthy", "timestamp": datetime.datetime.now().isoformat()}), 200
+
 @app.route('/')
 def index():
     if not check_session_timeout() or 'authenticated' not in session:
