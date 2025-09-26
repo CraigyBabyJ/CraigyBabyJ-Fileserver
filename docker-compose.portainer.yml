@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  craigybabyj-fileserver:
+    image: ghcr.io/craigybabyj/craigybabyj-fileserver:v1.0.1
+    container_name: craigybabyj-fileserver
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - app_data:/app/data
+      - ./data/uploads:/app/data/uploads
+    environment:
+      - FLASK_ENV=production
+      - UPLOAD_FOLDER=/app/data/uploads
+      - SECRET_KEY=your-secret-key-change-this
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - craigybabyj-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: craigybabyj-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      craigybabyj-fileserver:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+    networks:
+      - craigybabyj-network
+
+volumes:
+  app_data:
+    driver: local
+
+networks:
+  craigybabyj-network:
+    driver: bridge
