@@ -7,6 +7,8 @@ A production-ready Flask-based file upload server with user management, authenti
 - 🔐 **Secure Authentication** - Password-protected access with rate limiting
 - 👥 **User Management** - Admin panel for user creation and management
 - 📁 **File Organization** - User-specific upload directories
+- 📊 **File Analytics** - Track downloads, uploads, and user activity (v1.0.1+)
+- ⚡ **Real-time Progress** - Upload progress bars with visual feedback (v1.0.1+)
 - 🐳 **Docker Ready** - Full containerization with nginx reverse proxy
 - 🔒 **SSL Support** - HTTPS with Let's Encrypt integration
 - 🛡️ **Security Headers** - XSS protection, CSRF prevention, security headers
@@ -91,6 +93,7 @@ CraigyBabyJ-Fileserver/
 - `POST /login` - User authentication
 - `POST /upload` - File upload endpoint
 - `GET /admin/users` - User management (admin only)
+- `GET /admin/analytics` - File analytics dashboard (admin only, v1.0.1+)
 - `POST /admin/create_user` - Create new user
 - `GET /health` - Health check endpoint
 
@@ -287,6 +290,9 @@ messyuploadserver/
 ## Changelog
 
 ### v1.0.1 (Latest)
+- **📊 NEW:** File Analytics Dashboard - Track downloads, uploads, and user activity with comprehensive admin dashboard
+- **⚡ NEW:** Real-time Upload Progress Bars - Visual feedback with animated progress indicators during file uploads
+- **🎨 Enhanced:** Improved upload UI with better visual feedback and error handling
 - **🔧 Fixed:** Docker image name case sensitivity issue in GitHub Actions workflow
 - **📄 Updated:** License changed from MIT to GPL v3 to restrict commercial use
 - **🛡️ Enhanced:** Improved security scanning with proper container registry naming

@@ -226,11 +226,12 @@
         
         .progress-bar {
             width: 100%;
-            height: 20px;
+            height: 25px;
             background: rgba(15, 20, 25, 0.8);
             border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
+            position: relative;
         }
         
         .progress-fill {
@@ -238,11 +239,46 @@
             background: linear-gradient(135deg, #00d4ff 0%, #ff6b35 100%);
             width: 0%;
             transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background-image: linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, 0.2) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0.2) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 30px 30px;
+            animation: move 2s linear infinite;
+        }
+        
+        @keyframes move {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 30px 30px;
+            }
         }
         
         .progress-text {
-            margin-top: 0.5rem;
+            margin-top: 0.8rem;
             color: #cbd5e0;
+            font-weight: 500;
+            text-align: center;
+            font-size: 1rem;
         }
         
         .upload-results {
@@ -606,8 +642,11 @@
         function uploadFilesSequentially(files, index) {
             if (index >= files.length) {
                 // All files uploaded
-                progressContainer.style.display = 'none';
-                loadFiles(); // Refresh file list after upload
+                progressText.textContent = 'All cargo loaded successfully! ✈️';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    loadFiles(); // Refresh file list
+                }, 2000);
                 return;
             }
 
@@ -616,43 +655,76 @@
             formData.append('file', file);
             formData.append('csrf_token', csrfToken);
             
-            // Add current folder to the form data
             if (currentFolder) {
                 formData.append('folder', currentFolder);
             }
 
-            // Update progress text
-            progressText.textContent = `Uploading ${file.name} (${index + 1}/${files.length})...`;
+            // Create XMLHttpRequest for progress tracking
+            const xhr = new XMLHttpRequest();
             
-            // Calculate progress percentage
-            const progressPercent = ((index) / files.length) * 100;
-            progressFill.style.width = progressPercent + '%';
-
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                showResult(data, file.name);
-                
-                // Update progress
-                const newProgressPercent = ((index + 1) / files.length) * 100;
-                progressFill.style.width = newProgressPercent + '%';
-                
-                // Upload next file
-                setTimeout(() => {
-                    uploadFilesSequentially(files, index + 1);
-                }, 500);
-            })
-            .catch(error => {
-                showResult({ error: 'Upload failed: ' + error.message }, file.name);
-                
-                // Continue with next file even if this one failed
+            // Track upload progress
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const fileProgress = (e.loaded / e.total) * 100;
+                    const overallProgress = ((index + (e.loaded / e.total)) / files.length) * 100;
+                    
+                    progressFill.style.width = overallProgress + '%';
+                    progressText.textContent = `Uploading ${file.name} (${index + 1}/${files.length}) - ${Math.round(fileProgress)}%`;
+                }
+            });
+            
+            // Handle completion
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        showResult(data, file.name);
+                        
+                        // Update progress to show file completed
+                        const newProgressPercent = ((index + 1) / files.length) * 100;
+                        progressFill.style.width = newProgressPercent + '%';
+                        progressText.textContent = `Completed ${file.name} (${index + 1}/${files.length})`;
+                        
+                        // Upload next file
+                        setTimeout(() => {
+                            uploadFilesSequentially(files, index + 1);
+                        }, 500);
+                    } catch (error) {
+                        showResult({ error: 'Invalid response from server' }, file.name);
+                        setTimeout(() => {
+                            uploadFilesSequentially(files, index + 1);
+                        }, 500);
+                    }
+                } else {
+                    showResult({ error: `Upload failed with status: ${xhr.status}` }, file.name);
+                    setTimeout(() => {
+                        uploadFilesSequentially(files, index + 1);
+                    }, 500);
+                }
+            });
+            
+            // Handle errors
+            xhr.addEventListener('error', function() {
+                showResult({ error: 'Network error during upload' }, file.name);
                 setTimeout(() => {
                     uploadFilesSequentially(files, index + 1);
                 }, 500);
             });
+            
+            // Handle timeout
+            xhr.addEventListener('timeout', function() {
+                showResult({ error: 'Upload timeout' }, file.name);
+                setTimeout(() => {
+                    uploadFilesSequentially(files, index + 1);
+                }, 500);
+            });
+            
+            // Set timeout (10 minutes for large files)
+            xhr.timeout = 600000;
+            
+            // Start upload
+            xhr.open('POST', '/upload');
+            xhr.send(formData);
         }
 
         function showResult(data, filename) {

@@ -58,6 +58,107 @@ os.makedirs('data', exist_ok=True)
 # User management
 USERS_FILE = 'data/users.json'
 
+# Analytics storage file
+ANALYTICS_FILE = 'data/analytics.json'
+
+def load_analytics():
+    """Load analytics data from file"""
+    try:
+        if os.path.exists(ANALYTICS_FILE):
+            with open(ANALYTICS_FILE, 'r') as f:
+                return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        pass
+    
+    # Return default structure
+    return {
+        'downloads': {},  # filename -> {count, last_download, users: []}
+        'uploads': {},    # filename -> {count, upload_date, user}
+        'user_activity': {}  # username -> {downloads: [], uploads: [], last_activity}
+    }
+
+def save_analytics(analytics_data):
+    """Save analytics data to file"""
+    try:
+        with open(ANALYTICS_FILE, 'w') as f:
+            json.dump(analytics_data, f, indent=2, default=str)
+    except IOError:
+        pass
+
+def track_download(filename, username, folder=''):
+    """Track file download for analytics"""
+    analytics = load_analytics()
+    current_time = datetime.datetime.now().isoformat()
+    
+    # Track file downloads
+    file_key = f"{folder}/{filename}" if folder else filename
+    if file_key not in analytics['downloads']:
+        analytics['downloads'][file_key] = {
+            'count': 0,
+            'last_download': None,
+            'users': []
+        }
+    
+    analytics['downloads'][file_key]['count'] += 1
+    analytics['downloads'][file_key]['last_download'] = current_time
+    
+    # Track unique users who downloaded this file
+    if username not in analytics['downloads'][file_key]['users']:
+        analytics['downloads'][file_key]['users'].append(username)
+    
+    # Track user activity
+    if username not in analytics['user_activity']:
+        analytics['user_activity'][username] = {
+            'downloads': [],
+            'uploads': [],
+            'last_activity': None
+        }
+    
+    analytics['user_activity'][username]['downloads'].append({
+        'file': file_key,
+        'timestamp': current_time
+    })
+    analytics['user_activity'][username]['last_activity'] = current_time
+    
+    # Keep only last 100 downloads per user to prevent excessive data
+    if len(analytics['user_activity'][username]['downloads']) > 100:
+        analytics['user_activity'][username]['downloads'] = analytics['user_activity'][username]['downloads'][-100:]
+    
+    save_analytics(analytics)
+
+def track_upload(filename, username, folder=''):
+    """Track file upload for analytics"""
+    analytics = load_analytics()
+    current_time = datetime.datetime.now().isoformat()
+    
+    # Track file uploads
+    file_key = f"{folder}/{filename}" if folder else filename
+    analytics['uploads'][file_key] = {
+        'count': analytics['uploads'].get(file_key, {}).get('count', 0) + 1,
+        'upload_date': current_time,
+        'user': username
+    }
+    
+    # Track user activity
+    if username not in analytics['user_activity']:
+        analytics['user_activity'][username] = {
+            'downloads': [],
+            'uploads': [],
+            'last_activity': None
+        }
+    
+    analytics['user_activity'][username]['uploads'].append({
+        'file': file_key,
+        'timestamp': current_time
+    })
+    analytics['user_activity'][username]['last_activity'] = current_time
+    
+    # Keep only last 100 uploads per user to prevent excessive data
+    if len(analytics['user_activity'][username]['uploads']) > 100:
+        analytics['user_activity'][username]['uploads'] = analytics['user_activity'][username]['uploads'][-100:]
+    
+    save_analytics(analytics)
+
 def load_users():
     """Load users from JSON file"""
     if os.path.exists(USERS_FILE):
@@ -416,6 +517,11 @@ def upload_file():
         try:
             file.save(filepath)
             file_size = os.path.getsize(filepath)
+            
+            # Track upload analytics
+            username = session.get('username', 'anonymous')
+            track_upload(filename, username, current_folder)
+            
             return jsonify({
                 'success': True, 
                 'filename': filename,
@@ -620,6 +726,10 @@ def download_file(filename):
         if len(parts) >= 3 and parts[0].isdigit() and parts[1].isdigit():
             original_filename = parts[2]
     
+    # Track download analytics
+    username = session.get('username', 'anonymous')
+    track_download(filename, username, folder)
+    
     return send_file(file_path, as_attachment=True, download_name=original_filename)
 
 @app.route('/delete/<filename>', methods=['POST'])
@@ -771,6 +881,85 @@ def generate_password():
         'password': password,
         'hash': password_hash
     })
+
+@app.route('/admin/analytics')
+@rate_limit()
+@require_admin()
+def admin_analytics():
+    analytics_data = load_analytics()
+    
+    # Calculate total stats
+    total_downloads = sum(data.get('count', 0) for data in analytics_data.get('downloads', {}).values())
+    total_uploads = sum(data.get('count', 0) for data in analytics_data.get('uploads', {}).values())
+    
+    # Get unique users from user_activity
+    unique_users = len(analytics_data.get('user_activity', {}))
+    
+    # Get unique files from downloads and uploads
+    unique_files = set()
+    unique_files.update(analytics_data.get('downloads', {}).keys())
+    unique_files.update(analytics_data.get('uploads', {}).keys())
+    
+    # Calculate download counts
+    download_counts = {}
+    for filename, data in analytics_data.get('downloads', {}).items():
+        download_counts[filename] = data.get('count', 0)
+    
+    top_downloads = sorted(download_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    # Calculate upload counts
+    upload_counts = {}
+    for filename, data in analytics_data.get('uploads', {}).items():
+        upload_counts[filename] = data.get('count', 0)
+    
+    top_uploads = sorted(upload_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    # Get recent activity from user activity data
+    recent_activity = []
+    for username, user_data in analytics_data.get('user_activity', {}).items():
+        # Add recent downloads
+        for download in user_data.get('downloads', [])[-25:]:
+            recent_activity.append({
+                'type': 'download',
+                'filename': download.get('file', ''),
+                'username': username,
+                'timestamp': download.get('timestamp', ''),
+                'folder': ''
+            })
+        
+        # Add recent uploads
+        for upload in user_data.get('uploads', [])[-25:]:
+            recent_activity.append({
+                'type': 'upload',
+                'filename': upload.get('file', ''),
+                'username': username,
+                'timestamp': upload.get('timestamp', ''),
+                'folder': ''
+            })
+    
+    # Sort by timestamp (newest first)
+    recent_activity.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+    recent_activity = recent_activity[:50]
+    
+    # User activity summary
+    user_activity = {}
+    for username, user_data in analytics_data.get('user_activity', {}).items():
+        user_activity[username] = {
+            'downloads': len(user_data.get('downloads', [])),
+            'uploads': len(user_data.get('uploads', [])),
+            'last_activity': user_data.get('last_activity', '')
+        }
+    
+    return render_template('admin_analytics.html',
+                         total_downloads=total_downloads,
+                         total_uploads=total_uploads,
+                         unique_users=unique_users,
+                         unique_files=len(unique_files),
+                         top_downloads=top_downloads,
+                         top_uploads=top_uploads,
+                         recent_activity=recent_activity,
+                         user_activity=user_activity,
+                         csrf_token=generate_csrf_token())
 
 if __name__ == '__main__':
     print(f"Upload folder: {os.path.abspath(UPLOAD_FOLDER)}")
