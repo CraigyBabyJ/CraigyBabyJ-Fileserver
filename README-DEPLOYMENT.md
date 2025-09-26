@@ -68,7 +68,7 @@ sudo nano .env  # Edit configuration as needed
 
 ```bash
 # Pull the latest image
-sudo docker pull ghcr.io/craigybabyj/craigybabyj-fileserver:v1.0.1
+sudo docker pull ghcr.io/craigybabyj/craigybabyj-fileserver:latest
 
 # Start services using production compose file
 sudo docker-compose -f docker-compose.prod.yml up -d
