@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  craigybabyj-fileserver:
+    image: ghcr.io/craigybabyj/craigybabyj-fileserver:latest
+    container_name: craigybabyj-fileserver
+    restart: unless-stopped
+    volumes:
+      - /opt/craigybabyj-fileserver/data:/app/data
+      - /mnt/storage/uploads:/app/data/uploads
+    environment:
+      - FLASK_ENV=production
+      - UPLOAD_FOLDER=/app/data/uploads
+      - SECRET_KEY=your-secret-key-change-this
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - craigybabyj-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: craigybabyj-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-ssl.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      craigybabyj-fileserver:
+        condition: service_healthy
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+    networks:
+      - craigybabyj-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: craigybabyj-certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - craigybabyj-network
+
+networks:
+  craigybabyj-network:
+    driver: bridge
+
+volumes:
+  app_data:
