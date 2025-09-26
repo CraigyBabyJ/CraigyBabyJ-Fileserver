@@ -1,0 +1,33 @@
+[Unit]
+Description=CraigyBabyJ Aviation Cargo Hub Fileserver
+Documentation=https://github.com/CraigyBabyJ/CraigyBabyJ-Fileserver
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/craigybabyj-fileserver
+ExecStart=/usr/local/bin/docker-compose -f docker-compose.prod.yml up -d
+ExecStop=/usr/local/bin/docker-compose -f docker-compose.prod.yml down
+ExecReload=/usr/local/bin/docker-compose -f docker-compose.prod.yml restart
+TimeoutStartSec=0
+User=root
+Group=root
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/craigybabyj-fileserver
+
+# Environment
+Environment=COMPOSE_PROJECT_NAME=craigybabyj-fileserver
+
+[Install]
+WantedBy=multi-user.target
