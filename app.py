@@ -230,6 +230,42 @@ def is_admin(username):
     users = load_users()
     return users.get(username, {}).get('is_admin', False)
 
+def authenticate_env_user(username, password):
+    """Authenticate user from .env file configuration"""
+    # Get user credentials from environment variables
+    env_username = os.getenv(f'USER_{username.upper()}_USERNAME')
+    env_password = os.getenv(f'USER_{username.upper()}_PASSWORD')
+    
+    if env_username and env_password:
+        return env_username == username and env_password == password
+    
+    # Also check for simple format: USER_username=password
+    env_user_password = os.getenv(f'USER_{username.upper()}')
+    if env_user_password:
+        return env_user_password == password
+    
+    return False
+
+def is_env_user_admin(username):
+    """Check if .env user has admin privileges"""
+    # Check if user is explicitly marked as admin
+    is_admin_env = os.getenv(f'USER_{username.upper()}_ADMIN', 'false').lower()
+    return is_admin_env in ['true', '1', 'yes']
+
+def get_env_users():
+    """Get list of users configured in .env file"""
+    users = []
+    for key, value in os.environ.items():
+        if key.startswith('USER_') and not key.endswith('_PASSWORD') and not key.endswith('_ADMIN'):
+            if '_USERNAME' in key:
+                # Format: USER_JOHN_USERNAME=john
+                username = value
+            else:
+                # Format: USER_JOHN=password
+                username = key[5:].lower()  # Remove 'USER_' prefix
+            users.append(username)
+    return users
+
 # Initialize with default admin user if no users exist
 def initialize_default_admin():
     """Create default admin user if no users exist"""
@@ -437,7 +473,7 @@ def login():
             flash('Username and password are required.', 'error')
             return render_template('login.html', csrf_token=generate_csrf_token())
         
-        # Try new user system first
+        # Try user system first (database users)
         success, user_data = authenticate_user(username, password)
         if success:
             session['authenticated'] = True
@@ -450,15 +486,15 @@ def login():
             
             return redirect(url_for('index'))
         else:
-            # Fallback to old password system for backward compatibility
-            if password == SITE_PASSWORD:
+            # Try .env file users
+            if authenticate_env_user(username, password):
                 session['authenticated'] = True
-                session['username'] = 'legacy_user'
-                session['is_admin'] = True  # Legacy users are admin
+                session['username'] = username
+                session['is_admin'] = is_env_user_admin(username)
                 session['login_time'] = time.time()
                 
                 # Log successful login
-                log_login_attempt(client_ip, success=True, username='legacy_user')
+                log_login_attempt(client_ip, success=True, username=username)
                 
                 return redirect(url_for('index'))
             else:
@@ -467,7 +503,7 @@ def login():
                 
                 flash('Invalid username or password. Please try again.', 'error')
     
-    return render_template('login.html')
+    return render_template('login.html', csrf_token=generate_csrf_token())
 
 @app.route('/logout')
 def logout():

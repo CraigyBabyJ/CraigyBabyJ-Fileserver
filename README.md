@@ -4,7 +4,7 @@ A production-ready Flask-based file upload server with user management, authenti
 
 ## ✨ Features
 
-- 🔐 **Secure Authentication** - Password-protected access with rate limiting
+- 🔐 **Secure Authentication** - User-based authentication with .env configuration and rate limiting
 - 👥 **User Management** - Admin panel for user creation and management
 - 📁 **File Organization** - User-specific upload directories
 - 📊 **File Analytics** - Track downloads, uploads, and user activity (v1.0.1+)
@@ -31,8 +31,8 @@ A production-ready Flask-based file upload server with user management, authenti
    # Copy environment template
    cp .env.example .env
    
-   # Edit .env with your settings
-   # Change SITE_PASSWORD and SECRET_KEY
+   # Edit .env with your user settings
+   # Configure users and SECRET_KEY
    ```
 
 3. **Run with Python**
@@ -58,13 +58,26 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for complete Ubuntu server deployment instruc
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SITE_PASSWORD` | Main login password | `changeme123` |
+| `USER_USERNAME` | User credentials (format: USER_USERNAME=password) | - |
+| `USER_USERNAME_ADMIN` | Admin privileges for user (true/false) | `false` |
 | `SECRET_KEY` | Flask secret key | `your-secret-key-here` |
 | `PRODUCTION_MODE` | Enable production mode | `false` |
 | `FLASK_HOST` | Flask host binding | `0.0.0.0` |
 | `FLASK_PORT` | Flask port | `5000` |
 | `MAX_UPLOAD_SIZE` | Max file size (MB) | `500` |
 | `LOGIN_RATE_LIMIT` | Login attempts per minute | `5` |
+
+### User Configuration Examples
+
+```bash
+# Simple format: USER_USERNAME=password
+USER_CRAIG=mypassword123
+USER_ADMIN=adminpassword456
+
+# Admin privileges
+USER_CRAIG_ADMIN=true
+USER_ADMIN_ADMIN=true
+```
 
 ## 🏗️ Project Structure
 
@@ -116,7 +129,7 @@ docker build -t craigybabyj-fileserver .                  # Build image
 
 ## 🛡️ Security Features
 
-- **Authentication**: Password-based login system
+- **Authentication**: User-based login system with .env configuration
 - **Rate Limiting**: Prevents brute force attacks
 - **CSRF Protection**: Cross-site request forgery prevention
 - **Security Headers**: XSS, clickjacking, and content type protection
@@ -155,7 +168,7 @@ A simple, secure file upload website that allows friends to upload files with no
 
 ## Features
 
-- 🔐 Simple password authentication (stored in .env file)
+- 🔐 User-based authentication (configured in .env file)
 - 📁 Drag and drop file uploads
 - 📊 No file size limits
 - 🎨 Modern, responsive web interface
@@ -178,11 +191,17 @@ pip install -r requirements.txt
 pip3 install -r requirements.txt
 ```
 
-### 2. Configure Password
+### 2. Configure Users
 
-Edit the `.env` file and change the password:
+Edit the `.env` file and configure your users:
 ```
-SITE_PASSWORD=your_secure_password_here
+# User credentials
+USER_CRAIG=mypassword123
+USER_ADMIN=adminpassword456
+
+# Admin privileges
+USER_CRAIG_ADMIN=true
+USER_ADMIN_ADMIN=true
 ```
 
 ### 3. Run the Server
@@ -202,7 +221,7 @@ The server will start on `http://localhost:5000`
 ## Usage
 
 1. **Access the site**: Go to `http://your-server-ip:5000` in a web browser
-2. **Login**: Enter the password you set in the `.env` file
+2. **Login**: Enter your username and password configured in the `.env` file
 3. **Upload files**: 
    - Drag and drop files onto the upload area, OR
    - Click "Browse Files" to select files manually
@@ -241,7 +260,7 @@ If running on a Linux server, make sure:
 
 ## Security Notes
 
-- Change the default password in `.env` before sharing with friends
+- Configure secure usernames and passwords in `.env` before sharing with friends
 - The `.env` file should never be shared publicly
 - Consider using HTTPS in production environments
 - Files are stored locally - ensure you have enough disk space
